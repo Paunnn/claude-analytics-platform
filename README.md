@@ -80,3 +80,34 @@ make clean          # stop containers and drop volumes
 ```
 
 Built for the Provectus Gen AI Internship technical assignment, March 2026.
+
+## LLM Usage Log
+
+**Tool:** Claude Code (claude-sonnet-4-6) — used as the primary implementation driver throughout. Rough split: ~85% AI-generated code, ~15% manual fixes and verification.
+
+**Workflow:** one focused prompt per module, review output, run it, fix what broke, move on. Going module by module kept outputs tight and bugs easy to isolate.
+
+**Key prompts:**
+
+*Architecture (before any code):*
+> "Analyze the dataset files and describe their schema. Propose a full project architecture. List all files you will create. Ask clarifying questions before proceeding. Do not write code yet."
+
+Claude identified the five event types in the JSONL logs and proposed the four-layer stack (ETL → PostgreSQL → FastAPI → Streamlit). It asked whether to use async SQLAlchemy and Prophet — I said sync for simplicity and no Prophet (unnecessary C dependency). Resolved upfront instead of mid-implementation.
+
+*ETL pipeline:*
+> "Implement the complete ETL pipeline. Read the actual data files in data/raw/ first, then implement etl/ingest.py, etl/transform.py, etl/load.py, etl/pipeline.py in order."
+
+Asking it to read source files before writing catches field name assumptions before they become silent bugs.
+
+*ML models:*
+> "Implement analytics/ml_models.py with 3 classes: AnomalyDetector (IsolationForest), ForecastModel (Holt-Winters), UserClusterer (KMeans 4 clusters). Do NOT use Prophet."
+
+**How I validated output:**
+
+- Ran every module immediately after generation and checked for import errors
+- Verified ETL row counts against source file line counts (24,162 api_requests)
+- Cross-checked dashboard chart values against direct `psql` queries on the same aggregations
+- Caught a bug where `analytics/__init__.py` exported wrong class aliases — found it from an `ImportError` on API startup, fixed manually
+- Caught unimplemented stubs (`fetch_from_api` was `pass`) by reading docker compose logs when the dashboard showed no data
+
+Full phase-by-phase detail is in [LLM_USAGE_LOG.md](./LLM_USAGE_LOG.md).
