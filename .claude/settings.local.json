@@ -9,7 +9,15 @@
       "Read(//c/Users/stefa/claude-analytics-platform/**)",
       "Bash(done)",
       "Bash(curl -s http://localhost:8000/openapi.json | python3 -c \"\nimport json, sys\nspec = json.load\\(sys.stdin\\)\nfor path, methods in sorted\\(spec['paths'].items\\(\\)\\):\n    for method in methods:\n        if method in \\('get','post'\\):\n            print\\(f'{method.upper\\(\\):4} {path}'\\)\n\" 2>&1)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(curl -s http://localhost:8000/analytics/summary/overview 2>&1)",
+      "Bash(curl -s \"http://localhost:8000/analytics/metrics/cost?group_by=practice\" 2>&1)",
+      "Bash(curl -s \"http://localhost:8000/analytics/metrics/top-users?n=5\" 2>&1)",
+      "Bash(curl -s \"http://localhost:8000/analytics/metrics/cache-efficiency\" 2>&1)",
+      "Bash(curl -s \"http://localhost:8000/analytics/ml/anomalies\" 2>&1)",
+      "Bash(curl -s \"http://localhost:8000/analytics/ml/user-clusters\" 2>&1)",
+      "Bash(curl -s \"http://localhost:8000/analytics/metrics/peak-hours\" | python3 -c \"\nimport json,sys\nfrom collections import defaultdict\nd=json.load\\(sys.stdin\\)\nrows=d.get\\('data',[]\\)\nby_hour=defaultdict\\(int\\)\nby_day=defaultdict\\(int\\)\ndays={0:'Mon',1:'Tue',2:'Wed',3:'Thu',4:'Fri',5:'Sat',6:'Sun'}\nfor r in rows:\n    by_hour[r['hour_of_day']]+=r['request_count']\n    by_day[r['day_of_week']]+=r['request_count']\ntotal=sum\\(by_hour.values\\(\\)\\)\nprint\\('TOP HOURS:'\\)\nfor h,c in sorted\\(by_hour.items\\(\\),key=lambda x:-x[1]\\)[:5]:\n    print\\(f'  {h:02d}:00  {c} req  \\({c/total:.1%}\\)'\\)\nprint\\('BY DAY:'\\)\nfor day,c in sorted\\(by_day.items\\(\\),key=lambda x:-x[1]\\):\n    print\\(f'  {days[day]}  {c} req  \\({c/total:.1%}\\)'\\)\n\" 2>&1)",
+      "Bash(curl -s \"http://localhost:8000/analytics/tools/usage-stats\" | python3 -c \"\nimport json,sys\nd=json.load\\(sys.stdin\\)\ntotal_exec=sum\\(r['total_executions'] for r in d\\)\nprint\\(f'Total executions: {total_exec:,}'\\)\nfor r in d:\n    print\\(f\\\\\"{r['tool_name']:20} {r['total_executions']:6,} execs  {r['success_rate']:.1%} success  avg {r['avg_duration_ms']:.0f}ms  p95 {r['p95_duration_ms']:.0f}ms\\\\\"\\)\n\" 2>&1)"
     ]
   }
 }
