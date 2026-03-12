@@ -12,16 +12,16 @@ from .metrics import MetricsEngine
 from .aggregations import AggregationEngine
 from .insights import InsightGenerator
 from .ml_models import (
-    UsageForecastModel,
-    AnomalyDetectionModel,
-    CostOptimizationModel,
+    ForecastModel,
+    AnomalyDetector,
+    UserClusterer,
 )
 
 __all__ = [
     "MetricsEngine",
     "AggregationEngine",
     "InsightGenerator",
-    "UsageForecastModel",
-    "AnomalyDetectionModel",
-    "CostOptimizationModel",
+    "ForecastModel",
+    "AnomalyDetector",
+    "UserClusterer",
 ]

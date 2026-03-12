@@ -4,12 +4,16 @@ Data loading utilities for Streamlit dashboard.
 Handles data fetching from database and API with caching.
 """
 
+import os
+
 import streamlit as st
 import pandas as pd
 import requests
 from typing import Dict, Any, Optional, List
 from datetime import datetime, date
 from sqlalchemy.orm import Session
+
+API_BASE_URL = os.environ.get("API_URL", "http://api:8000")
 
 
 @st.cache_data(ttl=300)
@@ -105,7 +109,10 @@ def fetch_from_api(endpoint: str, params: Optional[Dict] = None) -> Any:
     Example:
         >>> data = fetch_from_api("/analytics/metrics/cost", {"group_by": "practice"})
     """
-    pass
+    url = f"{API_BASE_URL}{endpoint}"
+    response = requests.get(url, params=params, timeout=10)
+    response.raise_for_status()
+    return response.json()
 
 
 def query_database(query: str, params: Optional[Dict] = None) -> pd.DataFrame:

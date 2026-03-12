@@ -195,10 +195,10 @@ def render_cost_analysis():
             df = pd.DataFrame(cache_data['data'])
             fig = px.bar(
                 df.head(15),
-                x='user_email',
+                x='email',
                 y='cache_hit_rate',
                 title='Cache Hit Rate by User (Top 15)',
-                labels={'cache_hit_rate': 'Cache Hit Rate', 'user_email': 'User'}
+                labels={'cache_hit_rate': 'Cache Hit Rate', 'email': 'User'}
             )
             st.plotly_chart(fig, use_container_width=True)
 
