@@ -27,10 +27,10 @@ data/raw/ (JSONL + CSV)
   → etl/           parse, transform, bulk-insert
   → PostgreSQL      10 tables, date and user indexes
   → api/            FastAPI, 33 endpoints
-  → dashboard/      Streamlit, 4 pages
+  → dashboard/      Streamlit, 5 pages
 ```
 
-PostgreSQL is the only persistent store. Redis is in the compose file but isn't actively used — it's there for future caching or streaming work.
+PostgreSQL is the primary store. Redis is used for short-term caching of expensive aggregation endpoints (60-second TTL); the API falls back silently if Redis is unavailable.
 
 The analytics layer (`analytics/`) runs inside the API process; there's no separate worker. The three ML models (IsolationForest for anomaly detection, Holt-Winters for forecasting, KMeans for user segmentation) are instantiated on demand per request, not preloaded at startup.
 
