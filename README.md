@@ -9,14 +9,16 @@ The dataset covers 50 engineers across 5 practices, producing roughly 86,500 eve
 You need Docker Desktop. Ports 5432, 6379, 8000, and 8501 must be free.
 
 ```bash
-make setup    # builds images and starts all four services
-make ingest   # runs the ETL pipeline against data/raw/
+docker-compose up --build -d
+docker-compose exec api python scripts/run_etl.py
 ```
 
 Dashboard: http://localhost:8501
 API docs: http://localhost:8000/docs
 
-To stop and wipe volumes: `make clean`
+To stop and wipe volumes: `docker-compose down -v`
+
+If you have `make` installed, the Makefile wraps these commands (`make setup`, `make ingest`, `make clean`).
 
 ## Architecture
 
@@ -69,14 +71,13 @@ tests/          pytest suite
 ## Common tasks
 
 ```bash
-make setup          # build and start
-make ingest         # run ETL (idempotent, safe to re-run)
-make test           # run pytest
-make logs           # tail all service logs
-make logs-api       # tail API only
-make db-shell       # psql into the database
-make health         # check all service health endpoints
-make clean          # stop containers and drop volumes
+docker-compose up --build -d                              # build and start
+docker-compose exec api python scripts/run_etl.py         # run ETL (idempotent)
+docker-compose exec api pytest tests/ -v                  # run tests
+docker-compose logs -f                                    # tail all logs
+docker-compose logs -f api                                # tail API only
+docker-compose exec postgres psql -U claude -d claude_analytics  # psql shell
+docker-compose down -v                                    # stop and drop volumes
 ```
 
 Built for the Provectus Gen AI Internship technical assignment, March 2026.
