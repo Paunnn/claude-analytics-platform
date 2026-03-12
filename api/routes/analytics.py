@@ -7,15 +7,29 @@ Provides endpoints for retrieving analytics, metrics, and insights.
 from fastapi import APIRouter, Query, HTTPException
 from typing import Dict, Any, List, Optional
 from datetime import datetime, date
+import json
 import logging
+
+import redis as redis_lib
 
 from analytics.metrics import MetricsEngine
 from analytics.aggregations import AggregationEngine
 from analytics.ml_models import AnomalyDetector, ForecastModel, UserClusterer
+from config import settings
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
+
+
+def _get_redis() -> Optional[redis_lib.Redis]:
+    """Return a Redis client, or None if unavailable."""
+    try:
+        client = redis_lib.from_url(settings.redis_url, socket_connect_timeout=1)
+        client.ping()
+        return client
+    except Exception:
+        return None
 
 
 @router.get("/metrics/token-usage")
@@ -442,6 +456,16 @@ async def get_overview_summary() -> Dict[str, Any]:
     Returns:
         Overall metrics summary
     """
+    cache_key = "analytics:overview"
+    r = _get_redis()
+    if r:
+        try:
+            cached = r.get(cache_key)
+            if cached:
+                return json.loads(cached)
+        except Exception:
+            pass
+
     try:
         metrics = MetricsEngine()
 
@@ -453,7 +477,7 @@ async def get_overview_summary() -> Dict[str, Any]:
 
         total_row = totals.iloc[0] if not totals.empty else {}
 
-        return {
+        result = {
             "overall": {
                 "total_cost": float(total_row.get('total_cost', 0)),
                 "total_requests": int(total_row.get('request_count', 0)),
@@ -464,6 +488,68 @@ async def get_overview_summary() -> Dict[str, Any]:
             },
             "daily_active_users": dau.to_dict(orient="records") if not dau.empty else []
         }
+
+        if r:
+            try:
+                r.set(cache_key, json.dumps(result), ex=60)
+            except Exception:
+                pass
+
+        return result
     except Exception as e:
         logger.error(f"Error generating overview: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/aggregations/correlation-matrix")
+async def get_correlation_matrix(
+    metrics: str = Query(
+        "input_tokens,output_tokens,cost_usd,duration_ms",
+        description="Comma-separated list of metrics to correlate"
+    )
+) -> Dict[str, Any]:
+    """
+    Get Pearson correlation matrix between request-level metrics.
+
+    Returns:
+        Correlation matrix as a nested dict
+    """
+    try:
+        agg = AggregationEngine()
+        metric_list = [m.strip() for m in metrics.split(",")]
+        corr = agg.calculate_correlation_matrix(metrics=metric_list)
+
+        return {
+            "metrics": metric_list,
+            "correlation_matrix": corr.to_dict()
+        }
+    except Exception as e:
+        logger.error(f"Error calculating correlation matrix: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/aggregations/retention")
+async def get_user_retention(
+    period: str = Query("week", description="Retention period: day, week, or month")
+) -> Dict[str, Any]:
+    """
+    Get user retention cohort analysis.
+
+    Returns:
+        Retention matrix with cohort sizes and retention rates
+    """
+    if period not in ("day", "week", "month"):
+        raise HTTPException(status_code=400, detail="period must be day, week, or month")
+
+    try:
+        agg = AggregationEngine()
+        retention = agg.calculate_user_retention(period=period)
+
+        return {
+            "period": period,
+            "data": retention.to_dict(orient="records"),
+            "total_records": len(retention)
+        }
+    except Exception as e:
+        logger.error(f"Error calculating user retention: {e}")
         raise HTTPException(status_code=500, detail=str(e))

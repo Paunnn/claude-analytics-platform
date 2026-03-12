@@ -22,7 +22,10 @@ def fetch(endpoint, params=None):
 
 
 def main():
-    st.title("Overview")
+    col_title, col_btn = st.columns([6, 1])
+    col_title.title("Overview")
+    if col_btn.button("Refresh", use_container_width=True):
+        st.cache_data.clear()
 
     data = fetch("/analytics/summary/overview")
     if data:
