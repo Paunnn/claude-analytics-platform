@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config import settings
-from api.routes import analytics, users, health
+from api.routes import analytics, users, health, streaming
 
 # Configure logging
 logging.basicConfig(
@@ -75,6 +75,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(analytics.router)
     app.include_router(users.router)
+    app.include_router(streaming.router)
 
     return app
 
@@ -99,6 +100,7 @@ async def root():
             "health": "/health/",
             "analytics": "/analytics/",
             "users": "/users/",
+            "websocket": "ws://localhost:8000/ws/metrics",
             "docs": "/docs",
             "redoc": "/redoc"
         }

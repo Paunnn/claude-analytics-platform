@@ -32,6 +32,8 @@ data/raw/ (JSONL + CSV)
 
 PostgreSQL is the primary store. Redis is used for short-term caching of expensive aggregation endpoints (60-second TTL); the API falls back silently if Redis is unavailable.
 
+The API also exposes a WebSocket endpoint at `ws://localhost:8000/ws/metrics` that streams live metric snapshots from the database on a configurable interval (default 5 seconds). The client can adjust the interval at runtime by sending `{"interval": N}`. A test client is at `scripts/ws_client.py`.
+
 The analytics layer (`analytics/`) runs inside the API process; there's no separate worker. The three ML models (IsolationForest for anomaly detection, Holt-Winters for forecasting, KMeans for user segmentation) are instantiated on demand per request, not preloaded at startup.
 
 ## API endpoints
