@@ -1,6 +1,14 @@
 {
   "permissions": {
     "allow": [
+      "Bash(git commit:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker exec:*)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//c/Users/stefa/claude-analytics-platform/**)",
+      "Bash(done)",
+      "Bash(curl -s http://localhost:8000/openapi.json | python3 -c \"\nimport json, sys\nspec = json.load\\(sys.stdin\\)\nfor path, methods in sorted\\(spec['paths'].items\\(\\)\\):\n    for method in methods:\n        if method in \\('get','post'\\):\n            print\\(f'{method.upper\\(\\):4} {path}'\\)\n\" 2>&1)",
       "Bash(git add:*)"
     ]
   }
