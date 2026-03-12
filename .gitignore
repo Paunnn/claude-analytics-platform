@@ -77,3 +77,4 @@ docs/*.pdf
 *.bak
 temp/
 tmp/
+llm_history_raw.jsonl

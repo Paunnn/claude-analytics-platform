@@ -74,6 +74,46 @@ Two problems found by reading `docker compose logs api`. First, the API was cras
 
 ---
 
+## Phase 9 — Project cleanup and documentation rewrite
+
+> "Do a full project cleanup: DELETE all unnecessary files (*_SUMMARY.md, *_GUIDE.md, *_REFERENCE.md, test_*.py in root, llm_history_raw.jsonl, TODO/NOTES/draft files). REWRITE README.md to sound like a human wrote it — no bullet point overload, no '✅ Complete' checkboxes, no '🚀 Key Features' with emojis, plain technical prose, under 150 lines. REWRITE LLM_USAGE_LOG.md the same way. Check every other .md file."
+
+Generated docs tend to read like marketing copy. The rewrite brief was explicit: no emojis, no checkbox lists, no inflated section headers. Claude got it right on the first pass for README.md and this log. Deleted eight files that were either stubs, redundant, or AI-generated noise that wouldn't belong in a real project repo.
+
+---
+
+## Phase 10 — Dashboard pages debugging and fix
+
+> "The Streamlit dashboard only shows the 'app' tab, other pages don't load. The browser console shows 404 errors when calling the API. Diagnose and fix: check docker compose logs for both services, verify API health, check dashboard/pages/ for all page files and import errors. Fix whatever is broken, restart, confirm all 5 pages working."
+
+The API was failing silently on certain routes due to incomplete route registration. Also found that three of the five dashboard pages were stubs — function signatures present, bodies missing. Implemented all five pages (overview, usage analysis, cost analysis, user insights, tool analytics) and fixed the app.py landing page routing.
+
+---
+
+## Phase 11 — Data verification and presentation
+
+> "Check that data is shown correctly and that everything is good. Make a presentation — make sure it's professional. Research presentation design."
+
+Used the loaded dataset to verify chart accuracy against direct SQL queries. Built a 5-slide PDF presentation with real data: cost by practice, model distribution, peak usage heatmap, top users, and cache efficiency. First version was flagged as looking AI-generated — revised to use varied layouts, remove template conventions (uniform bullets, header+body pattern), and let the data drive the structure.
+
+---
+
+## Phase 12 — Real-time and statistical feature audit
+
+> "Check what real-time and advanced statistical features are currently implemented in the codebase. Look in analytics/metrics.py, analytics/aggregations.py, api/ routes, dashboard/ pages, docker-compose.yml (Redis). List what exists and what's missing for: 1. Real-time capabilities (Redis, WebSocket, streaming) 2. Advanced statistical analysis (correlations, percentiles, cohort analysis). Don't implement anything yet, just report what's there."
+
+This was a deliberate audit before adding features. Findings: Redis container was defined and healthy but zero application code touched it. `calculate_user_retention()` and `calculate_correlation_matrix()` were fully implemented in `aggregations.py` but had no API routes. Percentiles, cohort aggregations, rolling averages, and all three ML models were wired through properly. No WebSocket or streaming code existed anywhere.
+
+---
+
+## Phase 13 — Expose buried endpoints and add Redis caching
+
+> "Fix these 3 quick wins: 1. Expose the 2 buried endpoints — GET /analytics/aggregations/correlation-matrix and GET /analytics/aggregations/retention. 2. Add Redis caching to GET /analytics/summary/overview for 60 seconds using redis-py, fall back silently if Redis unavailable. 3. Add a Refresh button to the Overview dashboard page."
+
+Straightforward implementation. Added `_get_redis()` helper with a 1-second connect timeout and silent `except` so Redis failures don't surface to callers. Both new endpoints were one-liners wrapping existing engine methods. The dashboard refresh button calls `st.cache_data.clear()` — simpler and more honest than a polling loop.
+
+---
+
 ## What I'd do differently
 
 I'd review `__init__.py` re-exports immediately after generating any module with classes. Claude tends to generate module-level exports in a separate pass and sometimes uses different names than the actual implementations. It's a two-second check that would have avoided the startup crash in Phase 8.
