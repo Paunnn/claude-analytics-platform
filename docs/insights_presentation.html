@@ -2,1003 +2,934 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Claude Code Analytics — Insights Presentation</title>
+<title>Claude Code Usage — Insights</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --navy:   #0f2044;
-    --blue:   #1d4ed8;
-    --sky:    #eff6ff;
-    --amber:  #d97706;
-    --green:  #059669;
-    --red:    #dc2626;
-    --gray:   #64748b;
-    --light:  #f8fafc;
-    --border: #e2e8f0;
-    --text:   #0f172a;
-  }
-
-  body {
-    font-family: 'Inter', -apple-system, sans-serif;
-    background: #d1d5db;
-    color: var(--text);
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  /* ── SLIDE LAYOUT ──────────────────────────────────────── */
-  .slide {
-    width: 297mm;
-    height: 167mm;
-    background: white;
-    margin: 12mm auto;
-    display: grid;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 4px 24px rgba(0,0,0,.18);
-    page-break-after: always;
-  }
-
-  /* left accent bar */
-  .slide::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 5px;
-    background: var(--blue);
-  }
-
-  .slide-inner {
-    padding: 11mm 14mm 10mm 18mm;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
-
-  /* ── HEADER ────────────────────────────────────────────── */
-  .slide-header {
-    margin-bottom: 7mm;
-  }
-
-  .eyebrow {
-    font-size: 8px;
-    font-weight: 600;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--blue);
-    margin-bottom: 3px;
-  }
-
-  .headline {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--navy);
-    line-height: 1.25;
-    max-width: 88%;
-  }
-
-  .subline {
-    font-size: 10px;
-    color: var(--gray);
-    margin-top: 3px;
-    font-weight: 400;
-  }
-
-  /* ── BODY ──────────────────────────────────────────────── */
-  .body {
-    flex: 1;
-    display: flex;
-    gap: 10mm;
-    align-items: flex-start;
-  }
-
-  /* ── KPI CARDS ─────────────────────────────────────────── */
-  .kpis {
-    display: flex;
-    gap: 5mm;
-    margin-bottom: 7mm;
-  }
-
-  .kpi {
-    background: var(--sky);
-    border-radius: 6px;
-    padding: 5mm 6mm;
-    flex: 1;
-    border-top: 3px solid var(--blue);
-  }
-
-  .kpi-value {
-    font-size: 26px;
-    font-weight: 800;
-    color: var(--navy);
-    line-height: 1;
-  }
-
-  .kpi-label {
-    font-size: 9px;
-    font-weight: 500;
-    color: var(--gray);
-    margin-top: 3px;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-  }
-
-  .kpi.green  { border-top-color: var(--green); }
-  .kpi.amber  { border-top-color: var(--amber); }
-  .kpi.red    { border-top-color: var(--red);   }
-
-  .kpi.green .kpi-value { color: var(--green); }
-  .kpi.amber .kpi-value { color: var(--amber); }
-  .kpi.red   .kpi-value { color: var(--red);   }
-
-  /* ── INSIGHT BOX ───────────────────────────────────────── */
-  .insight {
-    background: var(--light);
-    border-left: 3px solid var(--amber);
-    border-radius: 0 6px 6px 0;
-    padding: 4mm 5mm;
-    font-size: 9.5px;
-    line-height: 1.55;
-    color: var(--text);
-  }
-
-  .insight strong { color: var(--amber); }
-
-  /* ── COLUMN ────────────────────────────────────────────── */
-  .col { display: flex; flex-direction: column; gap: 4mm; }
-  .col-wide  { flex: 1.7; }
-  .col-narrow { flex: 1; }
-
-  /* ── SECTION LABEL ─────────────────────────────────────── */
-  .section-label {
-    font-size: 8px;
-    font-weight: 700;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--gray);
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 2px;
-    margin-bottom: 2mm;
-  }
-
-  /* ── HORIZONTAL BAR CHART ──────────────────────────────── */
-  .bar-chart { display: flex; flex-direction: column; gap: 3.5mm; }
-
-  .bar-row {
-    display: flex;
-    align-items: center;
-    gap: 3mm;
-    font-size: 9px;
-  }
-
-  .bar-label {
-    width: 42mm;
-    text-align: right;
-    color: var(--text);
-    font-weight: 500;
-    flex-shrink: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .bar-track {
-    flex: 1;
-    height: 14px;
-    background: var(--border);
-    border-radius: 3px;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .bar-fill {
-    height: 100%;
-    background: var(--blue);
-    border-radius: 3px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding-right: 4px;
-  }
-
-  .bar-fill.accent { background: var(--amber); }
-
-  .bar-value {
-    font-size: 8px;
-    font-weight: 700;
-    color: white;
-    white-space: nowrap;
-  }
-
-  .bar-value.outside {
-    color: var(--gray);
-    margin-left: 4px;
-    font-weight: 600;
-  }
-
-  /* ── TABLE ─────────────────────────────────────────────── */
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 8.5px;
-  }
-
-  .data-table th {
-    background: var(--navy);
-    color: white;
-    font-weight: 600;
-    padding: 3px 6px;
-    text-align: left;
-    font-size: 7.5px;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-  }
-
-  .data-table td {
-    padding: 3.5px 6px;
-    border-bottom: 1px solid var(--border);
-    color: var(--text);
-  }
-
-  .data-table tr:nth-child(even) td { background: var(--light); }
-  .data-table tr:last-child td { border-bottom: none; }
-
-  .tag {
-    display: inline-block;
-    font-size: 7px;
-    font-weight: 700;
-    padding: 1px 5px;
-    border-radius: 20px;
-    letter-spacing: .04em;
-  }
-
-  .tag-blue  { background: #dbeafe; color: var(--blue);  }
-  .tag-amber { background: #fef3c7; color: var(--amber); }
-  .tag-red   { background: #fee2e2; color: var(--red);   }
-  .tag-green { background: #d1fae5; color: var(--green); }
-
-  /* ── DAY GRID ──────────────────────────────────────────── */
-  .day-grid {
-    display: flex;
-    gap: 2mm;
-    align-items: flex-end;
-  }
-
-  .day-col {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-  }
-
-  .day-bar {
-    width: 100%;
-    background: var(--blue);
-    border-radius: 3px 3px 0 0;
-    position: relative;
-  }
-
-  .day-bar.weekend { background: var(--amber); }
-
-  .day-name {
-    font-size: 8px;
-    font-weight: 600;
-    color: var(--gray);
-  }
-
-  .day-pct {
-    font-size: 7.5px;
-    font-weight: 700;
-    color: var(--navy);
-  }
-
-  /* ── HOUR SPARKLINE ────────────────────────────────────── */
-  .hour-bars {
-    display: flex;
-    gap: 1.2mm;
-    align-items: flex-end;
-    height: 28mm;
-    padding-bottom: 5mm;
-    position: relative;
-  }
-
-  .hour-bar-wrap {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    height: 100%;
-    justify-content: flex-end;
-    position: relative;
-  }
-
-  .hour-bar {
-    width: 100%;
-    background: var(--border);
-    border-radius: 2px 2px 0 0;
-    position: relative;
-  }
-
-  .hour-bar.peak { background: var(--blue); }
-  .hour-bar.high { background: #93c5fd; }
-
-  .hour-label {
-    position: absolute;
-    bottom: -5mm;
-    font-size: 6.5px;
-    color: var(--gray);
-    white-space: nowrap;
-  }
-
-  /* ── RECOMMENDATION ITEMS ──────────────────────────────── */
-  .rec-list { display: flex; flex-direction: column; gap: 4mm; }
-
-  .rec-item {
-    display: flex;
-    gap: 4mm;
-    align-items: flex-start;
-  }
-
-  .rec-num {
-    width: 20px;
-    height: 20px;
-    min-width: 20px;
-    background: var(--blue);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    font-weight: 800;
-    margin-top: 1px;
-  }
-
-  .rec-body { flex: 1; }
-
-  .rec-title {
-    font-size: 10.5px;
-    font-weight: 700;
-    color: var(--navy);
-    margin-bottom: 2px;
-  }
-
-  .rec-detail {
-    font-size: 9px;
-    color: var(--gray);
-    line-height: 1.5;
-  }
-
-  .rec-impact {
-    display: inline-block;
-    font-size: 7.5px;
-    font-weight: 700;
-    padding: 1px 6px;
-    border-radius: 20px;
-    background: #d1fae5;
-    color: var(--green);
-    margin-top: 3px;
-  }
-
-  /* ── FOOTER ────────────────────────────────────────────── */
-  .slide-footer {
-    margin-top: auto;
-    padding-top: 3mm;
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 7.5px;
-    color: var(--gray);
-  }
-
-  .footer-brand { font-weight: 700; color: var(--navy); }
-
-  /* ── TITLE SLIDE ───────────────────────────────────────── */
-  .slide-title {
-    background: var(--navy);
-  }
-
-  .slide-title::before { background: var(--amber); width: 8px; }
-
-  .slide-title .slide-inner {
-    justify-content: center;
-    padding-left: 20mm;
-  }
-
-  .title-tag {
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: .16em;
-    text-transform: uppercase;
-    color: var(--amber);
-    margin-bottom: 5mm;
-  }
-
-  .title-main {
-    font-size: 30px;
-    font-weight: 800;
-    color: white;
-    line-height: 1.2;
-    max-width: 70%;
-    margin-bottom: 4mm;
-  }
-
-  .title-sub {
-    font-size: 12px;
-    color: #94a3b8;
-    margin-bottom: 8mm;
-  }
-
-  .title-stats {
-    display: flex;
-    gap: 10mm;
-  }
-
-  .title-stat { color: white; }
-  .title-stat-value { font-size: 22px; font-weight: 800; color: var(--amber); }
-  .title-stat-label { font-size: 8.5px; color: #94a3b8; font-weight: 500; margin-top: 2px; text-transform: uppercase; letter-spacing: .06em; }
-
-  /* ── ANOMALY DOT TIMELINE ──────────────────────────────── */
-  .timeline {
-    display: flex;
-    flex-direction: column;
-    gap: 2.5mm;
-  }
-
-  .timeline-row {
-    display: flex;
-    align-items: center;
-    gap: 3mm;
-    font-size: 8.5px;
-  }
-
-  .timeline-dot {
-    width: 8px;
-    height: 8px;
-    min-width: 8px;
-    border-radius: 50%;
-    background: var(--red);
-  }
-
-  .timeline-dot.medium { background: var(--amber); }
-
-  .timeline-date { color: var(--gray); width: 16mm; flex-shrink: 0; }
-  .timeline-user { font-weight: 600; color: var(--navy); width: 30mm; flex-shrink: 0; }
-  .timeline-practice { color: var(--gray); width: 28mm; flex-shrink: 0; }
-  .timeline-tokens { font-weight: 700; color: var(--red); text-align: right; }
-
-  /* ── CLUSTER VISUAL ────────────────────────────────────── */
-  .cluster-visual {
-    display: flex;
-    align-items: center;
-    gap: 6mm;
-  }
-
-  .donut-wrap {
-    position: relative;
-    width: 52mm;
-    height: 52mm;
-    flex-shrink: 0;
-  }
-
-  .donut-center {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: 8px;
-    color: var(--gray);
-    font-weight: 500;
-  }
-
-  .donut-center strong {
-    font-size: 14px;
-    font-weight: 800;
-    color: var(--navy);
-    display: block;
-  }
-
-  .cluster-legend { display: flex; flex-direction: column; gap: 3mm; }
-
-  .legend-item { display: flex; align-items: center; gap: 3mm; font-size: 9px; }
-  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-
-  /* ── PRINT ─────────────────────────────────────────────── */
-  @media print {
-    body { background: white; }
-    .slide { margin: 0; box-shadow: none; page-break-after: always; }
-  }
-
-  @page { size: A4 landscape; margin: 0; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #e5e7eb;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.slide {
+  width: 297mm;
+  height: 167mm;
+  background: white;
+  margin: 10mm auto;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 20px rgba(0,0,0,.15);
+  page-break-after: always;
+}
+
+/* ── SLIDE 1: TITLE ─────────────────────────────────── */
+.s1 { background: #0f1f3d; }
+
+.s1-accent {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #f59e0b, #ef4444, #3b82f6);
+}
+
+.s1-content {
+  padding: 14mm 16mm;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.s1-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.s1-title {
+  font-size: 38px;
+  font-weight: 900;
+  color: white;
+  line-height: 1.1;
+  max-width: 60%;
+}
+
+.s1-title em {
+  font-style: normal;
+  color: #f59e0b;
+}
+
+.s1-stats {
+  display: flex;
+  gap: 14mm;
+  border-top: 1px solid #1e3a5f;
+  padding-top: 6mm;
+}
+
+.s1-stat-val {
+  font-size: 28px;
+  font-weight: 800;
+  color: white;
+  line-height: 1;
+}
+
+.s1-stat-lbl {
+  font-size: 8px;
+  color: #64748b;
+  margin-top: 3px;
+  font-weight: 500;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.s1-byline {
+  position: absolute;
+  bottom: 8mm;
+  right: 14mm;
+  font-size: 8px;
+  color: #334155;
+  text-align: right;
+  line-height: 1.7;
+}
+
+/* ── SLIDE 2: COST ──────────────────────────────────── */
+.s2-layout {
+  display: flex;
+  height: 100%;
+}
+
+.s2-left {
+  width: 44%;
+  background: #0f1f3d;
+  padding: 12mm 10mm 10mm 12mm;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.s2-big {
+  font-size: 64px;
+  font-weight: 900;
+  color: #f59e0b;
+  line-height: 1;
+  margin-bottom: 2mm;
+}
+
+.s2-big-label {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.s2-context {
+  font-size: 10px;
+  color: #94a3b8;
+  line-height: 1.6;
+  border-top: 1px solid #1e3a5f;
+  padding-top: 5mm;
+}
+
+.s2-context strong { color: white; }
+
+.s2-right {
+  flex: 1;
+  padding: 10mm 12mm;
+  display: flex;
+  flex-direction: column;
+  gap: 5mm;
+}
+
+.s2-heading {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f1f3d;
+  line-height: 1.3;
+}
+
+.bar-rows { display: flex; flex-direction: column; gap: 3.5mm; }
+
+.brow {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  font-size: 9px;
+}
+
+.blabel {
+  width: 38mm;
+  text-align: right;
+  color: #374151;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.btrack {
+  flex: 1;
+  height: 16px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bfill {
+  height: 100%;
+  background: #1d4ed8;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  padding: 0 5px;
+  justify-content: flex-end;
+}
+
+.bfill span {
+  font-size: 8px;
+  font-weight: 700;
+  color: white;
+  white-space: nowrap;
+}
+
+.bfill.lo { background: #93c5fd; }
+.bfill.lo span { color: #1e3a5f; }
+
+.s2-note {
+  font-size: 8.5px;
+  color: #64748b;
+  line-height: 1.55;
+  border-left: 2px solid #f59e0b;
+  padding-left: 4mm;
+}
+
+/* ── SLIDE 3: USAGE ─────────────────────────────────── */
+.s3 { padding: 12mm 14mm; display: flex; flex-direction: column; gap: 6mm; }
+
+.s3-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10mm;
+}
+
+.s3-hero {
+  flex-shrink: 0;
+}
+
+.s3-num {
+  font-size: 72px;
+  font-weight: 900;
+  color: #0f1f3d;
+  line-height: 1;
+}
+
+.s3-num em {
+  font-style: normal;
+  color: #f59e0b;
+}
+
+.s3-num-label {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 1mm;
+}
+
+.s3-explain {
+  padding-top: 3mm;
+  max-width: 120mm;
+}
+
+.s3-explain h2 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f1f3d;
+  line-height: 1.3;
+  margin-bottom: 3mm;
+}
+
+.s3-explain p {
+  font-size: 9.5px;
+  color: #475569;
+  line-height: 1.65;
+}
+
+.s3-bottom {
+  display: flex;
+  gap: 10mm;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 5mm;
+}
+
+.s3-col { flex: 1; }
+
+.s3-col-label {
+  font-size: 7.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 3mm;
+}
+
+.days-grid {
+  display: flex;
+  gap: 2.5mm;
+  align-items: flex-end;
+  height: 28mm;
+}
+
+.day-col-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.day-pct { font-size: 7.5px; font-weight: 700; }
+.day-bar-el { width: 100%; border-radius: 2px 2px 0 0; }
+.day-nm { font-size: 7.5px; color: #94a3b8; font-weight: 600; }
+
+.s3-tools { display: flex; flex-direction: column; gap: 3mm; }
+
+.tool-row {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  font-size: 9px;
+}
+
+.tool-name { width: 26mm; color: #374151; font-weight: 500; }
+
+.tool-track {
+  flex: 1;
+  height: 10px;
+  background: #f1f5f9;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.tool-fill { height: 100%; border-radius: 2px; }
+
+.tool-stat {
+  font-size: 8px;
+  color: #64748b;
+  width: 22mm;
+  text-align: right;
+}
+
+.tool-stat.warn { color: #dc2626; font-weight: 700; }
+
+/* ── SLIDE 4: ML ─────────────────────────────────────── */
+.s4 { display: flex; height: 100%; }
+
+.s4-left {
+  width: 42%;
+  padding: 12mm 10mm 10mm 12mm;
+  display: flex;
+  flex-direction: column;
+  gap: 5mm;
+  border-right: 1px solid #e2e8f0;
+}
+
+.s4-right {
+  flex: 1;
+  padding: 12mm 12mm 10mm 10mm;
+  display: flex;
+  flex-direction: column;
+  gap: 5mm;
+}
+
+.s4-section-title {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: #94a3b8;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 2px;
+}
+
+.s4-stat-row {
+  display: flex;
+  gap: 5mm;
+}
+
+.s4-stat {
+  flex: 1;
+}
+
+.s4-stat-val {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f1f3d;
+  line-height: 1;
+}
+
+.s4-stat-val.red { color: #dc2626; }
+
+.s4-stat-lbl {
+  font-size: 8px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.anomaly-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5mm;
+}
+
+.anomaly-row {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  font-size: 8.5px;
+  padding: 2mm 3mm;
+  border-radius: 4px;
+}
+
+.anomaly-row.high { background: #fef2f2; }
+.anomaly-row.med  { background: #fffbeb; }
+
+.a-date { color: #94a3b8; width: 14mm; flex-shrink: 0; }
+.a-name { font-weight: 600; color: #0f1f3d; width: 28mm; flex-shrink: 0; }
+.a-team { color: #64748b; flex: 1; }
+.a-val  { font-weight: 700; text-align: right; }
+.a-val.red { color: #dc2626; }
+.a-val.amb { color: #d97706; }
+
+.s4-note {
+  font-size: 9px;
+  color: #475569;
+  line-height: 1.6;
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 4mm;
+  border-left: 3px solid #3b82f6;
+}
+
+.cluster-row {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  font-size: 9px;
+  margin-bottom: 3mm;
+}
+
+.c-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+.c-label { font-weight: 600; color: #0f1f3d; flex: 1; }
+
+.c-bar-track {
+  width: 50mm;
+  height: 8px;
+  background: #f1f5f9;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.c-bar-fill { height: 100%; border-radius: 2px; }
+
+.c-pct { font-weight: 700; width: 10mm; text-align: right; }
+
+.power-user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2mm;
+  font-size: 8.5px;
+}
+
+.pu-row {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+}
+
+.pu-name { flex: 1; color: #0f1f3d; font-weight: 500; }
+.pu-val { font-weight: 700; color: #1d4ed8; }
+.pu-sub { color: #94a3b8; font-size: 7.5px; }
+
+/* ── SLIDE 5: RECOMMENDATIONS ───────────────────────── */
+.s5 { padding: 12mm 14mm 10mm; display: flex; flex-direction: column; gap: 5mm; }
+
+.s5-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #0f1f3d;
+  line-height: 1.25;
+  max-width: 80%;
+  padding-bottom: 4mm;
+  border-bottom: 2px solid #0f1f3d;
+}
+
+.recs { display: flex; gap: 6mm; }
+
+.rec-card {
+  flex: 1;
+  padding: 5mm;
+  border-radius: 6px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 3mm;
+  border-top: 3px solid #1d4ed8;
+}
+
+.rec-card:nth-child(2) { border-top-color: #f59e0b; }
+.rec-card:nth-child(3) { border-top-color: #10b981; }
+
+.rec-num {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.rec-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f1f3d;
+  line-height: 1.35;
+}
+
+.rec-body {
+  font-size: 8.5px;
+  color: #475569;
+  line-height: 1.6;
+  flex: 1;
+}
+
+.rec-tag {
+  font-size: 7.5px;
+  font-weight: 600;
+  color: white;
+  background: #1d4ed8;
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 20px;
+  align-self: flex-start;
+}
+
+.rec-card:nth-child(2) .rec-tag { background: #d97706; }
+.rec-card:nth-child(3) .rec-tag { background: #059669; }
+
+.s5-footer {
+  margin-top: auto;
+  font-size: 7.5px;
+  color: #94a3b8;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 3mm;
+}
+
+/* ── PRINT ──────────────────────────────────────────── */
+@media print {
+  body { background: white; }
+  .slide { margin: 0; box-shadow: none; }
+}
+
+@page { size: A4 landscape; margin: 0; }
 </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════════════════
+
+<!-- ══════════════════════════════════════
      SLIDE 1 — TITLE
-     ══════════════════════════════════════════════════════════ -->
-<div class="slide slide-title">
-  <div class="slide-inner">
-    <div class="title-tag">Claude Code Analytics Platform &nbsp;·&nbsp; Provectus Internship Assignment &nbsp;·&nbsp; March 2026</div>
-    <div class="title-main">Claude Code Usage:<br>What the Data Tells Us</div>
-    <div class="title-sub">90-day analysis of 50 engineers across 5 engineering practices</div>
-    <div class="title-stats">
-      <div class="title-stat">
-        <div class="title-stat-value">$1,241</div>
-        <div class="title-stat-label">Total Spend</div>
+══════════════════════════════════════ -->
+<div class="slide s1">
+  <div class="s1-accent"></div>
+  <div class="s1-content">
+    <div class="s1-label">Claude Code Analytics · Provectus Internship · March 2026</div>
+
+    <div>
+      <div class="s1-title">How 50 engineers<br>used <em>Claude Code</em><br>for 90 days</div>
+    </div>
+
+    <div class="s1-stats">
+      <div>
+        <div class="s1-stat-val">$1,241</div>
+        <div class="s1-stat-lbl">Total spend</div>
       </div>
-      <div class="title-stat">
-        <div class="title-stat-value">24,162</div>
-        <div class="title-stat-label">API Requests</div>
+      <div>
+        <div class="s1-stat-val">24,162</div>
+        <div class="s1-stat-lbl">API requests</div>
       </div>
-      <div class="title-stat">
-        <div class="title-stat-value">98.9%</div>
-        <div class="title-stat-label">Cache Efficiency</div>
+      <div>
+        <div class="s1-stat-val">151,790</div>
+        <div class="s1-stat-lbl">Tool executions</div>
       </div>
-      <div class="title-stat">
-        <div class="title-stat-value">151,790</div>
-        <div class="title-stat-label">Tool Executions</div>
+      <div>
+        <div class="s1-stat-val">98.9%</div>
+        <div class="s1-stat-lbl">Cache hit rate</div>
       </div>
     </div>
+  </div>
+
+  <div class="s1-byline">
+    Dataset: Jan–Mar 2026<br>
+    50 engineers · 5 practices<br>
+    1,000 sessions
   </div>
 </div>
 
 
-<!-- ══════════════════════════════════════════════════════════
-     SLIDE 2 — COST & ADOPTION
-     ══════════════════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════
+     SLIDE 2 — COST
+══════════════════════════════════════ -->
 <div class="slide">
-  <div class="slide-inner">
-    <div class="slide-header">
-      <div class="eyebrow">Cost &amp; Adoption</div>
-      <div class="headline">Frontend Engineering accounts for 37% of total spend — driven by volume, not inefficiency</div>
-      <div class="subline">Cost-per-request is nearly identical across all practices ($0.050–$0.052), so the gap reflects adoption intensity, not overspending.</div>
-    </div>
+  <div class="s2-layout">
 
-    <div class="body">
-      <!-- Left: KPIs + bar chart -->
-      <div class="col col-wide">
-        <div class="kpis">
-          <div class="kpi">
-            <div class="kpi-value">$1,241</div>
-            <div class="kpi-label">Total Cost (90 days)</div>
-          </div>
-          <div class="kpi green">
-            <div class="kpi-value">$0.051</div>
-            <div class="kpi-label">Avg Cost / Request</div>
-          </div>
-          <div class="kpi amber">
-            <div class="kpi-value">21.3M</div>
-            <div class="kpi-label">Total Tokens Used</div>
-          </div>
-        </div>
-
-        <div class="section-label">Total Spend by Practice</div>
-        <div class="bar-chart">
-          <div class="bar-row">
-            <span class="bar-label">Frontend Eng.</span>
-            <div class="bar-track">
-              <div class="bar-fill" style="width:100%">
-                <span class="bar-value">$456 &nbsp;·&nbsp; 37%</span>
-              </div>
-            </div>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">Backend Eng.</span>
-            <div class="bar-track">
-              <div class="bar-fill" style="width:52.4%">
-                <span class="bar-value">$239 &nbsp;·&nbsp; 19%</span>
-              </div>
-            </div>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">Data Eng.</span>
-            <div class="bar-track">
-              <div class="bar-fill" style="width:45.3%">
-                <span class="bar-value">$207 &nbsp;·&nbsp; 17%</span>
-              </div>
-            </div>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">ML Eng.</span>
-            <div class="bar-track">
-              <div class="bar-fill" style="width:43.5%">
-                <span class="bar-value">$198 &nbsp;·&nbsp; 16%</span>
-              </div>
-            </div>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">Platform Eng.</span>
-            <div class="bar-track">
-              <div class="bar-fill" style="width:31.0%">
-                <span class="bar-value">$141 &nbsp;·&nbsp; 11%</span>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div class="s2-left">
+      <div>
+        <div class="s2-big">37%</div>
+        <div class="s2-big-label">of total spend</div>
+        <div style="font-size:11px;color:#f59e0b;font-weight:600;margin-top:2mm;">Frontend Engineering</div>
       </div>
 
-      <!-- Right: top users + insight -->
-      <div class="col col-narrow">
-        <div class="section-label">Top 5 Users by Cost</div>
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Practice</th>
-              <th>Spend</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Eden Chen</td>
-              <td><span class="tag tag-blue">Frontend</span></td>
-              <td><strong>$59.18</strong></td>
-            </tr>
-            <tr>
-              <td>Phoenix Martinez</td>
-              <td><span class="tag tag-blue">Frontend</span></td>
-              <td><strong>$50.96</strong></td>
-            </tr>
-            <tr>
-              <td>Nico Harris</td>
-              <td><span class="tag tag-amber">Backend</span></td>
-              <td><strong>$49.05</strong></td>
-            </tr>
-            <tr>
-              <td>Sam Jones</td>
-              <td><span class="tag tag-blue">Frontend</span></td>
-              <td><strong>$48.45</strong></td>
-            </tr>
-            <tr>
-              <td>Rowan Chen</td>
-              <td><span class="tag tag-green">Data</span></td>
-              <td><strong>$47.25</strong></td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="insight">
-          <strong>Note:</strong> The top 5 users account for <strong>$254.86 (20.5%)</strong> of total spend. All five are Power Users by cluster — their high spend reflects high output, but warrants session-level monitoring.
-        </div>
+      <div class="s2-context">
+        Cost per request is <strong>nearly identical</strong> across all five practices ($0.050–$0.052).
+        Frontend's higher absolute spend reflects higher adoption — not inefficiency.
+        The top 5 users alone account for <strong>$255 (20.5%)</strong> of total spend.
       </div>
     </div>
 
-    <div class="slide-footer">
-      <span class="footer-brand">Claude Analytics Platform</span>
-      <span>Source: api_requests table &nbsp;·&nbsp; Jan–Mar 2026 &nbsp;·&nbsp; n = 24,162 requests</span>
-      <span>2 / 5</span>
+    <div class="s2-right">
+      <div class="s2-heading">Total spend by practice — $1,241 over 90 days</div>
+
+      <div class="bar-rows">
+        <div class="brow">
+          <span class="blabel">Frontend Eng.</span>
+          <div class="btrack"><div class="bfill" style="width:100%"><span>$456 · 17 users</span></div></div>
+        </div>
+        <div class="brow">
+          <span class="blabel">Backend Eng.</span>
+          <div class="btrack"><div class="bfill" style="width:52%"><span>$239 · 11 users</span></div></div>
+        </div>
+        <div class="brow">
+          <span class="blabel">Data Eng.</span>
+          <div class="btrack"><div class="bfill" style="width:45%"><span>$207 · 8 users</span></div></div>
+        </div>
+        <div class="brow">
+          <span class="blabel">ML Eng.</span>
+          <div class="btrack"><div class="bfill lo" style="width:44%"><span>$198 · 8 users</span></div></div>
+        </div>
+        <div class="brow">
+          <span class="blabel">Platform Eng.</span>
+          <div class="btrack"><div class="bfill lo" style="width:31%"><span>$141 · 6 users</span></div></div>
+        </div>
+      </div>
+
+      <div class="s2-note">
+        Eden Chen (Frontend, L4) is the top spender at $59.18 — nearly 5× the team average of $24.81.
+        All top 5 spenders were flagged as Power Users by the KMeans clustering model.
+      </div>
     </div>
+
   </div>
 </div>
 
 
-<!-- ══════════════════════════════════════════════════════════
+<!-- ══════════════════════════════════════
      SLIDE 3 — USAGE PATTERNS
-     ══════════════════════════════════════════════════════════ -->
+══════════════════════════════════════ -->
 <div class="slide">
-  <div class="slide-inner">
-    <div class="slide-header">
-      <div class="eyebrow">Usage Patterns</div>
-      <div class="headline">Engineers are most active at 5 pm and on weekends — weekend days outpace every weekday</div>
-      <div class="subline">Sunday is the single busiest day (17.9% of all requests). Saturday + Sunday together account for 33% of total usage.</div>
+  <div class="s3">
+
+    <div class="s3-top">
+      <div class="s3-hero">
+        <div class="s3-num"><em>33%</em></div>
+        <div class="s3-num-label">of all requests happen on weekends</div>
+      </div>
+
+      <div class="s3-explain">
+        <h2>Sunday is the busiest day of the week.<br>Friday is the quietest.</h2>
+        <p>
+          Weekend usage (Sat + Sun = 33.1%) outpaces any two consecutive weekdays.
+          This could mean engineers are voluntarily using Claude Code on personal time,
+          or that project deadlines are pushing work into weekends.
+          Either way, it's worth understanding — the data doesn't tell us which.
+        </p>
+      </div>
     </div>
 
-    <div class="body">
-      <!-- Left: day distribution + tool breakdown -->
-      <div class="col col-wide">
-        <div class="section-label">Request Volume by Day of Week</div>
-        <div style="display:flex; gap:3mm; align-items:flex-end; height:34mm; padding-bottom:6mm; margin-bottom:4mm;">
-          <!-- Sun -->
-          <div style="flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end; gap:2px;">
-            <span style="font-size:8px;font-weight:700;color:#d97706;">17.9%</span>
-            <div style="width:100%;height:80%;background:#d97706;border-radius:3px 3px 0 0;"></div>
-            <span style="font-size:8px;font-weight:700;color:#d97706;">Sun</span>
+    <div class="s3-bottom">
+      <div class="s3-col">
+        <div class="s3-col-label">Requests by day</div>
+        <div class="days-grid">
+          <div class="day-col-wrap">
+            <div class="day-pct" style="color:#d97706;">17.9%</div>
+            <div class="day-bar-el" style="height:80%;background:#f59e0b;"></div>
+            <div class="day-nm" style="color:#d97706;">Sun</div>
           </div>
-          <!-- Mon -->
-          <div style="flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end; gap:2px;">
-            <span style="font-size:8px;font-weight:600;color:#1d4ed8;">16.5%</span>
-            <div style="width:100%;height:74%;background:#1d4ed8;border-radius:3px 3px 0 0;"></div>
-            <span style="font-size:8px;font-weight:600;color:#64748b;">Mon</span>
+          <div class="day-col-wrap">
+            <div class="day-pct" style="color:#1d4ed8;">16.5%</div>
+            <div class="day-bar-el" style="height:73%;background:#1d4ed8;"></div>
+            <div class="day-nm">Mon</div>
           </div>
-          <!-- Tue -->
-          <div style="flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end; gap:2px;">
-            <span style="font-size:8px;color:#64748b;">12.5%</span>
-            <div style="width:100%;height:56%;background:#93c5fd;border-radius:3px 3px 0 0;"></div>
-            <span style="font-size:8px;color:#64748b;">Tue</span>
+          <div class="day-col-wrap">
+            <div class="day-pct" style="color:#94a3b8;">12.5%</div>
+            <div class="day-bar-el" style="height:55%;background:#bfdbfe;"></div>
+            <div class="day-nm">Tue</div>
           </div>
-          <!-- Wed -->
-          <div style="flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end; gap:2px;">
-            <span style="font-size:8px;color:#64748b;">14.0%</span>
-            <div style="width:100%;height:63%;background:#93c5fd;border-radius:3px 3px 0 0;"></div>
-            <span style="font-size:8px;color:#64748b;">Wed</span>
+          <div class="day-col-wrap">
+            <div class="day-pct" style="color:#94a3b8;">14.0%</div>
+            <div class="day-bar-el" style="height:62%;background:#bfdbfe;"></div>
+            <div class="day-nm">Wed</div>
           </div>
-          <!-- Thu -->
-          <div style="flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end; gap:2px;">
-            <span style="font-size:8px;color:#64748b;">12.8%</span>
-            <div style="width:100%;height:57%;background:#93c5fd;border-radius:3px 3px 0 0;"></div>
-            <span style="font-size:8px;color:#64748b;">Thu</span>
+          <div class="day-col-wrap">
+            <div class="day-pct" style="color:#94a3b8;">12.8%</div>
+            <div class="day-bar-el" style="height:57%;background:#bfdbfe;"></div>
+            <div class="day-nm">Thu</div>
           </div>
-          <!-- Fri -->
-          <div style="flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end; gap:2px;">
-            <span style="font-size:8px;color:#64748b;">11.1%</span>
-            <div style="width:100%;height:50%;background:#e2e8f0;border-radius:3px 3px 0 0;"></div>
-            <span style="font-size:8px;color:#64748b;">Fri</span>
+          <div class="day-col-wrap">
+            <div class="day-pct" style="color:#94a3b8;">11.1%</div>
+            <div class="day-bar-el" style="height:49%;background:#e2e8f0;"></div>
+            <div class="day-nm">Fri</div>
           </div>
-          <!-- Sat -->
-          <div style="flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end; gap:2px;">
-            <span style="font-size:8px;font-weight:700;color:#d97706;">15.2%</span>
-            <div style="width:100%;height:68%;background:#fbbf24;border-radius:3px 3px 0 0;"></div>
-            <span style="font-size:8px;font-weight:700;color:#d97706;">Sat</span>
-          </div>
-        </div>
-
-        <div class="section-label">Most-Used Tools (by execution count)</div>
-        <div class="bar-chart">
-          <div class="bar-row">
-            <span class="bar-label">Read</span>
-            <div class="bar-track">
-              <div class="bar-fill" style="width:100%">
-                <span class="bar-value">45,230 &nbsp;·&nbsp; 98.5%</span>
-              </div>
-            </div>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">Bash</span>
-            <div class="bar-track">
-              <div class="bar-fill accent" style="width:96.3%">
-                <span class="bar-value">43,560 &nbsp;·&nbsp; 93.1% ⚠</span>
-              </div>
-            </div>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">Edit</span>
-            <div class="bar-track">
-              <div class="bar-fill" style="width:42.5%">
-                <span class="bar-value">19,215 &nbsp;·&nbsp; 99.1%</span>
-              </div>
-            </div>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">Grep</span>
-            <div class="bar-track">
-              <div class="bar-fill" style="width:25.4%">
-                <span class="bar-value">11,480 &nbsp;·&nbsp; 98.7%</span>
-              </div>
-            </div>
+          <div class="day-col-wrap">
+            <div class="day-pct" style="color:#d97706;">15.2%</div>
+            <div class="day-bar-el" style="height:68%;background:#fbbf24;"></div>
+            <div class="day-nm" style="color:#d97706;">Sat</div>
           </div>
         </div>
       </div>
 
-      <!-- Right: peak hours + insight -->
-      <div class="col col-narrow">
-        <div class="section-label">Peak Hours (UTC)</div>
-        <table class="data-table" style="margin-bottom:4mm;">
-          <thead><tr><th>Hour</th><th>Requests</th><th>Share</th></tr></thead>
-          <tbody>
-            <tr><td><strong>17:00</strong></td><td>2,528</td><td><strong>10.5%</strong></td></tr>
-            <tr><td><strong>12:00</strong></td><td>2,499</td><td><strong>10.3%</strong></td></tr>
-            <tr><td>16:00</td><td>2,237</td><td>9.3%</td></tr>
-            <tr><td>11:00</td><td>2,047</td><td>8.5%</td></tr>
-            <tr><td>13:00</td><td>2,042</td><td>8.5%</td></tr>
-          </tbody>
-        </table>
+      <div class="s3-col">
+        <div class="s3-col-label">Peak hours (UTC) — top 3 are 17:00, 12:00, 16:00</div>
+        <div class="s3-tools" style="margin-top:2mm;">
+          <div class="tool-row">
+            <span class="tool-name">17:00 (5 pm)</span>
+            <div class="tool-track"><div class="tool-fill" style="width:100%;background:#1d4ed8;"></div></div>
+            <span class="tool-stat">2,528 req · 10.5%</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">12:00 (noon)</span>
+            <div class="tool-track"><div class="tool-fill" style="width:99%;background:#1d4ed8;"></div></div>
+            <span class="tool-stat">2,499 req · 10.3%</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">16:00 (4 pm)</span>
+            <div class="tool-track"><div class="tool-fill" style="width:88%;background:#60a5fa;"></div></div>
+            <span class="tool-stat">2,237 req · 9.3%</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">11:00 (11 am)</span>
+            <div class="tool-track"><div class="tool-fill" style="width:81%;background:#93c5fd;"></div></div>
+            <span class="tool-stat">2,047 req · 8.5%</span>
+          </div>
+        </div>
+      </div>
 
-        <div class="insight">
-          <strong>Bash is the only tool below 95% success rate</strong> (93.1%). With 43,560 executions, its 6.9% failure rate represents ~3,006 failed shell commands — the largest reliability gap in the platform.
+      <div class="s3-col">
+        <div class="s3-col-label">Tool success rates — one outlier</div>
+        <div class="s3-tools" style="margin-top:2mm;">
+          <div class="tool-row">
+            <span class="tool-name">Write</span>
+            <div class="tool-track"><div class="tool-fill" style="width:99.3%;background:#10b981;"></div></div>
+            <span class="tool-stat">99.3%</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Edit</span>
+            <div class="tool-track"><div class="tool-fill" style="width:99.1%;background:#10b981;"></div></div>
+            <span class="tool-stat">99.1%</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Read</span>
+            <div class="tool-track"><div class="tool-fill" style="width:98.5%;background:#34d399;"></div></div>
+            <span class="tool-stat">98.5%</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Bash ⚠</span>
+            <div class="tool-track"><div class="tool-fill" style="width:93.1%;background:#ef4444;"></div></div>
+            <span class="tool-stat warn">93.1% — 3,006 failures</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="slide-footer">
-      <span class="footer-brand">Claude Analytics Platform</span>
-      <span>Source: api_requests, tool_uses tables &nbsp;·&nbsp; n = 24,162 requests, 151,790 tool executions</span>
-      <span>3 / 5</span>
-    </div>
   </div>
 </div>
 
 
-<!-- ══════════════════════════════════════════════════════════
+<!-- ══════════════════════════════════════
      SLIDE 4 — ML INSIGHTS
-     ══════════════════════════════════════════════════════════ -->
+══════════════════════════════════════ -->
 <div class="slide">
-  <div class="slide-inner">
-    <div class="slide-header">
-      <div class="eyebrow">ML Insights — Anomaly Detection &amp; User Segmentation</div>
-      <div class="headline">36 usage spikes detected in January; 9 Power Users average 3–4× more tokens per session than the rest</div>
-      <div class="subline">IsolationForest (contamination = 5%) flagged 36 of 720 daily user records. KMeans clustering separated users into two clear behavioral groups.</div>
-    </div>
+  <div class="s4">
 
-    <div class="body">
-      <!-- Left: anomaly timeline -->
-      <div class="col col-wide">
-        <div class="kpis" style="margin-bottom:4mm;">
-          <div class="kpi red">
-            <div class="kpi-value">36</div>
-            <div class="kpi-label">Anomalies detected</div>
-          </div>
-          <div class="kpi amber">
-            <div class="kpi-value">5.0%</div>
-            <div class="kpi-label">Anomaly Rate</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-value">305K</div>
-            <div class="kpi-label">Peak single-day tokens</div>
-          </div>
+    <div class="s4-left">
+      <div class="s4-section-title">Anomaly Detection · IsolationForest</div>
+
+      <div class="s4-stat-row">
+        <div class="s4-stat">
+          <div class="s4-stat-val red">36</div>
+          <div class="s4-stat-lbl">anomalous days<br>out of 720 records</div>
         </div>
-
-        <div class="section-label">Most Significant Anomalies (by token volume)</div>
-        <div class="timeline">
-          <div class="timeline-row">
-            <div class="timeline-dot"></div>
-            <span class="timeline-date">Jan 23</span>
-            <span class="timeline-user">Nico Harris</span>
-            <span class="timeline-practice">Backend Eng.</span>
-            <span class="timeline-tokens">305,591 tokens</span>
-          </div>
-          <div class="timeline-row">
-            <div class="timeline-dot"></div>
-            <span class="timeline-date">Jan 27</span>
-            <span class="timeline-user">Rowan Chen</span>
-            <span class="timeline-practice">Data Eng.</span>
-            <span class="timeline-tokens">285,356 tokens</span>
-          </div>
-          <div class="timeline-row">
-            <div class="timeline-dot"></div>
-            <span class="timeline-date">Jan 04</span>
-            <span class="timeline-user">Taylor Garcia</span>
-            <span class="timeline-practice">Data Eng.</span>
-            <span class="timeline-tokens">295,431 tokens</span>
-          </div>
-          <div class="timeline-row">
-            <div class="timeline-dot medium"></div>
-            <span class="timeline-date">Jan 08</span>
-            <span class="timeline-user">Harper Garcia</span>
-            <span class="timeline-practice">Frontend Eng.</span>
-            <span class="timeline-tokens">290,970 tokens</span>
-          </div>
-          <div class="timeline-row">
-            <div class="timeline-dot medium"></div>
-            <span class="timeline-date">Jan 04</span>
-            <span class="timeline-user">Eden Chen</span>
-            <span class="timeline-practice">Frontend Eng.</span>
-            <span class="timeline-tokens">293,544 tokens</span>
-          </div>
+        <div class="s4-stat">
+          <div class="s4-stat-val">305K</div>
+          <div class="s4-stat-lbl">tokens in a single day<br>(largest spike)</div>
         </div>
       </div>
 
-      <!-- Right: user clusters -->
-      <div class="col col-narrow">
-        <div class="section-label">User Segmentation (KMeans, k=4 → 2 active clusters)</div>
-
-        <!-- Simple donut representation using CSS -->
-        <div style="display:flex;align-items:center;gap:6mm;margin-bottom:4mm;">
-          <svg width="80" height="80" viewBox="0 0 36 36">
-            <!-- Power User 18% -->
-            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" stroke-width="4"/>
-            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1d4ed8" stroke-width="4"
-              stroke-dasharray="100 100" stroke-dashoffset="0"/>
-            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#d97706" stroke-width="4"
-              stroke-dasharray="18 82" stroke-dashoffset="-82"
-              transform="rotate(-90 18 18)"/>
-            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1d4ed8" stroke-width="4"
-              stroke-dasharray="82 18" stroke-dashoffset="0"
-              transform="rotate(-90 18 18)"/>
-            <text x="18" y="16" text-anchor="middle" font-size="5" font-weight="bold" fill="#0f2044">50</text>
-            <text x="18" y="21" text-anchor="middle" font-size="3.5" fill="#64748b">users</text>
-          </svg>
-          <div class="cluster-legend">
-            <div class="legend-item">
-              <div class="legend-dot" style="background:#1d4ed8;"></div>
-              <div>
-                <div style="font-weight:700;font-size:9px;color:#0f2044;">Tool-Heavy &nbsp;<span style="color:#1d4ed8;">41 users (82%)</span></div>
-                <div style="font-size:8px;color:#64748b;">Avg 18K tokens/session &nbsp;·&nbsp; ~6.3 tools/req</div>
-              </div>
-            </div>
-            <div class="legend-item">
-              <div class="legend-dot" style="background:#d97706;"></div>
-              <div>
-                <div style="font-weight:700;font-size:9px;color:#0f2044;">Power Users &nbsp;<span style="color:#d97706;">9 users (18%)</span></div>
-                <div style="font-size:8px;color:#64748b;">Avg 33K tokens/session &nbsp;·&nbsp; ~6.4 tools/req</div>
-              </div>
-            </div>
-          </div>
+      <div class="s4-section-title">Largest spikes — January 2026</div>
+      <div class="anomaly-list">
+        <div class="anomaly-row high">
+          <span class="a-date">Jan 23</span>
+          <span class="a-name">Nico Harris</span>
+          <span class="a-team">Backend Eng.</span>
+          <span class="a-val red">305,591 tok</span>
         </div>
+        <div class="anomaly-row high">
+          <span class="a-date">Jan 04</span>
+          <span class="a-name">Taylor Garcia</span>
+          <span class="a-team">Data Eng.</span>
+          <span class="a-val red">295,431 tok</span>
+        </div>
+        <div class="anomaly-row high">
+          <span class="a-date">Jan 08</span>
+          <span class="a-name">Harper Garcia</span>
+          <span class="a-team">Frontend Eng.</span>
+          <span class="a-val red">290,970 tok</span>
+        </div>
+        <div class="anomaly-row med">
+          <span class="a-date">Jan 24</span>
+          <span class="a-name">Casey Jones</span>
+          <span class="a-team">Platform Eng.</span>
+          <span class="a-val amb">254,414 tok</span>
+        </div>
+        <div class="anomaly-row med">
+          <span class="a-date">Jan 09</span>
+          <span class="a-name">Sam Jones</span>
+          <span class="a-team">Frontend Eng.</span>
+          <span class="a-val amb">225,748 tok</span>
+        </div>
+      </div>
 
-        <div class="section-label">Power Users</div>
-        <table class="data-table">
-          <thead><tr><th>User</th><th>Practice</th><th>Tokens/Session</th></tr></thead>
-          <tbody>
-            <tr><td>Sam Jones</td><td>Frontend</td><td><strong>41,420</strong></td></tr>
-            <tr><td>Eden Chen</td><td>Frontend</td><td><strong>37,755</strong></td></tr>
-            <tr><td>Harper Garcia</td><td>Frontend</td><td><strong>36,626</strong></td></tr>
-            <tr><td>Phoenix Martinez</td><td>Frontend</td><td><strong>34,957</strong></td></tr>
-            <tr><td>Nico Harris</td><td>Backend</td><td><strong>32,243</strong></td></tr>
-          </tbody>
-        </table>
+      <div class="s4-note">
+        All 36 anomalies occurred in January. No anomalies were detected in February or March,
+        suggesting the team self-corrected or workload stabilised.
       </div>
     </div>
 
-    <div class="slide-footer">
-      <span class="footer-brand">Claude Analytics Platform</span>
-      <span>Source: IsolationForest (contamination=0.05) on daily user-token records &nbsp;·&nbsp; KMeans k=4 on session + tool features</span>
-      <span>4 / 5</span>
+    <div class="s4-right">
+      <div class="s4-section-title">User Segmentation · KMeans clustering</div>
+
+      <div style="margin-bottom:3mm;">
+        <div class="cluster-row">
+          <div class="c-dot" style="background:#1d4ed8;"></div>
+          <span class="c-label">Tool-Heavy Users</span>
+          <div class="c-bar-track"><div class="c-bar-fill" style="width:82%;background:#1d4ed8;"></div></div>
+          <span class="c-pct" style="color:#1d4ed8;">82%</span>
+        </div>
+        <div style="font-size:8px;color:#94a3b8;margin:-1mm 0 3mm 15mm;">41 users · avg 18K tokens/session · ~6.3 tools/request</div>
+
+        <div class="cluster-row">
+          <div class="c-dot" style="background:#f59e0b;"></div>
+          <span class="c-label">Power Users</span>
+          <div class="c-bar-track"><div class="c-bar-fill" style="width:18%;background:#f59e0b;"></div></div>
+          <span class="c-pct" style="color:#d97706;">18%</span>
+        </div>
+        <div style="font-size:8px;color:#94a3b8;margin:-1mm 0 3mm 15mm;">9 users · avg 33K tokens/session · 1.8× more output</div>
+      </div>
+
+      <div class="s4-section-title">Power Users — tokens per session</div>
+      <div class="power-user-list">
+        <div class="pu-row">
+          <span class="pu-name">Sam Jones <span class="pu-sub">Frontend</span></span>
+          <span class="pu-val">41,420</span>
+        </div>
+        <div class="pu-row">
+          <span class="pu-name">Eden Chen <span class="pu-sub">Frontend</span></span>
+          <span class="pu-val">37,755</span>
+        </div>
+        <div class="pu-row">
+          <span class="pu-name">Harper Garcia <span class="pu-sub">Frontend</span></span>
+          <span class="pu-val">36,626</span>
+        </div>
+        <div class="pu-row">
+          <span class="pu-name">Phoenix Martinez <span class="pu-sub">Frontend</span></span>
+          <span class="pu-val">34,957</span>
+        </div>
+        <div class="pu-row">
+          <span class="pu-name">Nico Harris <span class="pu-sub">Backend</span></span>
+          <span class="pu-val">32,243</span>
+        </div>
+        <div class="pu-row">
+          <span class="pu-name">Rowan Chen <span class="pu-sub">Data Eng.</span></span>
+          <span class="pu-val">31,713</span>
+        </div>
+      </div>
     </div>
+
   </div>
 </div>
 
 
-<!-- ══════════════════════════════════════════════════════════
+<!-- ══════════════════════════════════════
      SLIDE 5 — RECOMMENDATIONS
-     ══════════════════════════════════════════════════════════ -->
+══════════════════════════════════════ -->
 <div class="slide">
-  <div class="slide-inner">
-    <div class="slide-header">
-      <div class="eyebrow">Recommendations</div>
-      <div class="headline">Three actions to improve visibility, reduce risk, and sustain 98.9% cache efficiency</div>
-      <div class="subline">Each recommendation is directly tied to findings. Estimated impact based on current usage data.</div>
-    </div>
+  <div class="s5">
 
-    <div class="body" style="flex-direction:column; gap:0;">
-      <div class="rec-list">
+    <div class="s5-title">Three things worth acting on</div>
 
-        <div class="rec-item">
-          <div class="rec-num">1</div>
-          <div class="rec-body">
-            <div class="rec-title">Set per-session token alerts for the 9 Power Users</div>
-            <div class="rec-detail">
-              Power Users average 33K tokens/session vs. 18K for Tool-Heavy users. Three anomalous events exceeded 290K tokens in a single day.
-              Implement a Slack or email alert when a session surpasses 150K tokens. This adds zero workflow friction but gives engineering managers
-              early visibility before runaway sessions inflate monthly spend.
-            </div>
-            <span class="rec-impact">Est. impact: early warning on cost spikes &gt;3× daily average</span>
-          </div>
+    <div class="recs">
+
+      <div class="rec-card">
+        <div class="rec-num">Finding 1 → Action</div>
+        <div class="rec-title">Set token alerts for the 9 Power Users</div>
+        <div class="rec-body">
+          Three engineers hit 290K+ tokens in a single day during January.
+          A simple alert at 150K tokens/day adds zero friction but gives
+          engineering managers visibility before a session inflates monthly spend.
+          The top 5 users already account for 20% of total cost.
         </div>
-
-        <div class="rec-item">
-          <div class="rec-num">2</div>
-          <div class="rec-body">
-            <div class="rec-title">Investigate weekend usage — Sunday is the busiest day across the entire team</div>
-            <div class="rec-detail">
-              Sunday (17.9%) and Saturday (15.2%) together account for 33% of all API requests, more than any two consecutive weekdays.
-              A short survey (5 questions, anonymous) would clarify whether this reflects voluntary passion projects, unclear project deadlines,
-              or workload spillover — each requiring a different management response.
-            </div>
-            <span class="rec-impact">Est. impact: informs workload and work-life balance policy decisions</span>
-          </div>
-        </div>
-
-        <div class="rec-item">
-          <div class="rec-num">3</div>
-          <div class="rec-body">
-            <div class="rec-title">Reduce Bash tool failures from 6.9% to under 3% by auditing common failure patterns</div>
-            <div class="rec-detail">
-              Bash is the second-most-used tool (43,560 executions) with the lowest success rate (93.1%). At current volume,
-              that is ~3,006 failed shell commands per quarter. Pulling the failed command logs and categorising the top 5 error types
-              would identify whether failures stem from environment issues, permission errors, or prompt patterns — and likely yield the fastest
-              productivity improvement available without any model changes.
-            </div>
-            <span class="rec-impact">Est. impact: recover ~3,000 failed tool calls per quarter</span>
-          </div>
-        </div>
-
+        <span class="rec-tag">Cost control</span>
       </div>
+
+      <div class="rec-card">
+        <div class="rec-num">Finding 2 → Action</div>
+        <div class="rec-title">Find out why engineers code on Sundays</div>
+        <div class="rec-body">
+          Sunday is the single busiest day (17.9% of requests). That is unusual
+          and could mean voluntary side projects, deadline pressure, or timezone
+          distribution effects. A short anonymous survey would clarify this — the
+          right management response depends entirely on the answer.
+        </div>
+        <span class="rec-tag">People &amp; culture</span>
+      </div>
+
+      <div class="rec-card">
+        <div class="rec-num">Finding 3 → Action</div>
+        <div class="rec-title">Audit Bash failures — 3,006 failed commands per quarter</div>
+        <div class="rec-body">
+          Bash is the second most-used tool and the only one below 95% success (93.1%).
+          Pulling error logs and categorising the top failure types would likely surface
+          a small number of fixable patterns — environment issues, path problems, or
+          specific command patterns the model gets wrong.
+        </div>
+        <span class="rec-tag">Productivity</span>
+      </div>
+
     </div>
 
-    <div class="slide-footer">
-      <span class="footer-brand">Claude Analytics Platform &nbsp;·&nbsp; Stefan Paun &nbsp;·&nbsp; Provectus Gen AI Internship 2026</span>
-      <span>All data from live PostgreSQL database &nbsp;·&nbsp; Analysis period: Jan–Mar 2026</span>
+    <div class="s5-footer">
+      <span>Stefan Paun · Provectus Gen AI Internship 2026</span>
+      <span>All data from PostgreSQL · analysis period Jan–Mar 2026 · n = 24,162 requests</span>
       <span>5 / 5</span>
     </div>
+
   </div>
 </div>
 
